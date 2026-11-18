@@ -912,6 +912,16 @@ function sizing(){
   else{const rho=1.25;ws=Math.min(rho*availH/(r*(rho+1)),maxSlot);w=Math.min(availH/r-ws,maxPool,ws)}
   set(fs,Math.max(w,40),Math.max(ws,40));
 }
+const CHEER={ok:["seikai1","seikai2","seikai3"],no:["oshii1","oshii2","oshii3"]};
+let lastPick={ok:-1,no:-1};
+function cheerKind(k,t){
+  if(!praise)return;
+  try{speechSynthesis&&speechSynthesis.cancel()}catch(e){}
+  const L=CHEER[k];let i;do{i=Math.floor(Math.random()*L.length)}while(L.length>1&&i===lastPick[k]);lastPick[k]=i;
+  const a=new Audio("audio/"+L[i]+".wav");
+  a.onerror=()=>cheer(t);
+  const pr=a.play();if(pr&&pr.catch)pr.catch(()=>{});
+}
 function cheer(t){if(!praise||!window.speechSynthesis)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="ja-JP";u.rate=.9;u.pitch=1.15;u.volume=1;speechSynthesis.speak(u)}catch(e){}}
 function say(w){if(!voice||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.lang="ja-JP";u.rate=.85;speechSynthesis.speak(u)}
 function cardEl(w,cls){
@@ -952,10 +962,10 @@ function check(){
   if(seq.length<n){setMsg("no",`まだ あと ${n-seq.length} まい、ならべてください。`);return}
   for(let i=0;i<n-1;i++){
     if(last(seq[i])!==first(seq[i+1])){
-      setMsg("no",`おしい！「${seq[i]}」のつぎは「${last(seq[i])}」ではじまる絵です。もういちど、ならべてみましょう。`);cheer("おしい！　もう一回がんばって！");
+      setMsg("no",`おしい！「${seq[i]}」のつぎは「${last(seq[i])}」ではじまる絵です。もういちど、ならべてみましょう。`);cheerKind("no","おしい！　もう一回がんばって！");
       document.querySelectorAll(".slot .card").forEach((c,k)=>{if(k===i||k===i+1)c.classList.add("ng")});return}
   }
-  done=true;stopTimer();render();setMsg("ok","せいかい！ すばらしいです！　"+seq.join(" → "));cheer("せいかい！　すばらしいです！");
+  done=true;stopTimer();render();setMsg("ok","せいかい！ すばらしいです！　"+seq.join(" → "));cheerKind("ok","せいかい！　すばらしいです！");
   $("bNext").style.display="";$("bNext").textContent=(idx+1<plist().length)?"つぎのもんだい":"さいしょから";
   sizing();
 }
