@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>絵でしりとり</title>
+<style>
+:root{--bg:#fbf6ec;--ink:#2b2b2b;--accent:#2f6f5e;--warm:#e8a15a;--card:#fff;--ng:#b5543a;--fs:18px;--w:108px;--ws:108px;--r:1;--iw:.94}
+body.kana,body.done{--r:1.28;--iw:.8}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Meiryo",sans-serif;font-size:var(--fs);line-height:1.4}
+main{padding:calc(var(--fs)*.4) calc(var(--fs)*.6)}
+.top{display:flex;align-items:center;gap:calc(var(--fs)*.5);flex-wrap:wrap;position:relative}
+h1{font-size:calc(var(--fs)*1.2);margin:0;white-space:nowrap}
+.row{display:flex;flex-wrap:wrap;gap:calc(var(--fs)*.3)}
+button{font:inherit;font-size:var(--fs);min-height:calc(var(--fs)*2.1);padding:0 calc(var(--fs)*.7);border-radius:calc(var(--fs)*.5);border:2px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer;white-space:nowrap}
+button.main{background:var(--accent);color:#fff}
+button.on{background:var(--accent);color:#fff}
+.info{white-space:nowrap}
+.hidden{display:none!important}
+#opts{position:absolute;top:100%;right:0;z-index:20;background:#fff;border:2px solid var(--accent);border-radius:calc(var(--fs)*.6);padding:calc(var(--fs)*.5);box-shadow:0 4px 16px #0003;max-width:100%}
+.slots,.pool{display:flex;flex-wrap:nowrap;gap:calc(var(--fs)*.5);align-items:center;margin:calc(var(--fs)*.3) 0}
+.slots{--cw:var(--ws)}.pool{--cw:var(--w)}
+.slot,.card{width:var(--cw);height:calc(var(--cw)*var(--r));border-radius:calc(var(--cw)*.08)}
+.slot{border:3px dashed #bbb;display:flex;align-items:center;justify-content:center;position:relative;background:#fff8;flex:none}
+.slot .no{position:absolute;top:2px;left:8px;font-size:calc(var(--fs)*.9);color:#888}
+.arrow{flex:none;width:calc(var(--ws)*.2);text-align:center;font-size:calc(var(--ws)*.18);color:#888}
+.card{flex:none;border:3px solid var(--accent);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:0;user-select:none;overflow:hidden}
+.card img{width:calc(var(--cw)*var(--iw));height:calc(var(--cw)*var(--iw));object-fit:contain}
+.card .t{font-size:calc(var(--cw)*.17);margin-top:1px;white-space:nowrap}
+.card .big{font-size:calc(var(--cw)*.2);white-space:nowrap}
+.card.hide{visibility:hidden}
+.card.hint{box-shadow:0 0 0 calc(var(--cw)*.03) var(--warm)}
+.card.ng{border-color:var(--ng);box-shadow:0 0 0 calc(var(--cw)*.025) #e7b8aa}
+.bottom{display:flex;align-items:center;gap:calc(var(--fs)*.8);min-height:calc(var(--fs)*2.2)}
+.msg{flex:1;font-size:calc(var(--fs)*1.3);padding:0 calc(var(--fs)*.5);border-radius:calc(var(--fs)*.4)}
+.msg:empty{visibility:hidden}
+.msg.ok{background:#e1f1e8}.msg.no{background:#f8e6df}
+body.done .pool,body.done .btnrow{display:none}
+body.done .msg{font-size:calc(var(--fs)*2.2)}
+@media (max-width:1099px){.slots,.pool{flex-wrap:wrap}}
+.foot{margin:0;color:#777;font-size:calc(var(--fs)*.75);white-space:nowrap}
+</style></head><body><main id="main">
+<div class="top" id="top">
+ <h1>絵でしりとり</h1>
+ <div class="row lv" id="lv"></div>
+ <span class="info" id="info"></span>
+ <div class="row btnrow">
+  <button class="main" id="bOk">できた！</button>
+  <button id="bUndo">ひとつもどす</button>
+  <button id="bReset">ぜんぶもどす</button>
+  <button id="bHint">ヒント</button>
+ </div>
+ <button id="bNext" class="main" style="display:none">つぎのもんだい</button>
+ <button id="bSet">せってい</button>
+ <span class="info" id="timer"></span>
+<div class="row hidden" id="opts">
+ <button id="bFull">全画面</button>
+ <button id="bAns">こたえを見る</button>
+ <button id="bPrev">◀ 前の問題</button>
+ <button id="bSkip">次の問題 ▶</button>
+ <button id="oKana">ひらがな：なし</button>
+ <button id="oVoice">読みあげ：なし</button>
+ <button id="oTime">時間：なし</button>
+</div>
+</div>
+<div class="slots" id="slots"></div>
+<div class="pool" id="pool"></div>
+<div class="bottom"><div class="msg" id="msg" aria-live="polite"></div><p class="foot">この遊びの絵は、AIで作成しました。</p></div>
+</main>
+<script>
+const PUZZLES=[{"level": 1, "levelName": "かんたん", "items": ["まくら", "らくだ", "こま"], "answer": ["こま", "まくら", "らくだ"]}, {"level": 1, "levelName": "かんたん", "items": ["まど", "ねこ", "こま"], "answer": ["ねこ", "こま", "まど"]}, {"level": 1, "levelName": "かんたん", "items": ["だるま", "ごりら", "らくだ"], "answer": ["ごりら", "らくだ", "だるま"]}, {"level": 1, "levelName": "かんたん", "items": ["すいか", "いす", "かご"], "answer": ["いす", "すいか", "かご"]}, {"level": 1, "levelName": "かんたん", "items": ["かさ", "うし", "しか"], "answer": ["うし", "しか", "かさ"]}, {"level": 1, "levelName": "かんたん", "items": ["かえる", "ほし", "しか"], "answer": ["ほし", "しか", "かえる"]}, {"level": 1, "levelName": "かんたん", "items": ["かさ", "なす", "さかな"], "answer": ["かさ", "さかな", "なす"]}, {"level": 1, "levelName": "かんたん", "items": ["まめ", "しまうま", "なし"], "answer": ["なし", "しまうま", "まめ"]}, {"level": 1, "levelName": "かんたん", "items": ["ねずみ", "めがね", "まめ"], "answer": ["まめ", "めがね", "ねずみ"]}, {"level": 1, "levelName": "かんたん", "items": ["とけい", "かめ", "いか"], "answer": ["とけい", "いか", "かめ"]}, {"level": 2, "levelName": "ふつう", "items": ["しまうま", "はな", "まくら", "なし"], "answer": ["はな", "なし", "しまうま", "まくら"]}, {"level": 2, "levelName": "ふつう", "items": ["はな", "かえる", "なす", "すいか"], "answer": ["はな", "なす", "すいか", "かえる"]}, {"level": 2, "levelName": "ふつう", "items": ["かめ", "すいか", "いす", "とけい"], "answer": ["とけい", "いす", "すいか", "かめ"]}, {"level": 2, "levelName": "ふつう", "items": ["かめ", "めがね", "ねずみ", "いか"], "answer": ["いか", "かめ", "めがね", "ねずみ"]}, {"level": 2, "levelName": "ふつう", "items": ["ねこ", "めがね", "くるま", "まめ"], "answer": ["くるま", "まめ", "めがね", "ねこ"]}, {"level": 2, "levelName": "ふつう", "items": ["きつね", "こま", "ねこ", "まど"], "answer": ["きつね", "ねこ", "こま", "まど"]}, {"level": 2, "levelName": "ふつう", "items": ["うし", "ぞう", "しまうま", "まど"], "answer": ["ぞう", "うし", "しまうま", "まど"]}, {"level": 2, "levelName": "ふつう", "items": ["こいのぼり", "りんご", "きつね", "ねこ"], "answer": ["きつね", "ねこ", "こいのぼり", "りんご"]}, {"level": 2, "levelName": "ふつう", "items": ["こいのぼり", "りんご", "ごりら", "たこ"], "answer": ["たこ", "こいのぼり", "りんご", "ごりら"]}, {"level": 2, "levelName": "ふつう", "items": ["うま", "ぞう", "りんご", "まり"], "answer": ["ぞう", "うま", "まり", "りんご"]}, {"level": 2, "levelName": "ふつう", "items": ["ぞう", "りす", "うま", "まり"], "answer": ["ぞう", "うま", "まり", "りす"]}, {"level": 2, "levelName": "ふつう", "items": ["ろうそく", "まり", "りす", "くるま"], "answer": ["ろうそく", "くるま", "まり", "りす"]}, {"level": 2, "levelName": "ふつう", "items": ["かご", "らくだ", "ごりら", "だるま"], "answer": ["かご", "ごりら", "らくだ", "だるま"]}, {"level": 2, "levelName": "ふつう", "items": ["しか", "ほし", "さかな", "かさ"], "answer": ["ほし", "しか", "かさ", "さかな"]}, {"level": 3, "levelName": "むずかしい", "items": ["かご", "たこ", "すいか", "こいのぼり", "りす"], "answer": ["たこ", "こいのぼり", "りす", "すいか", "かご"]}, {"level": 3, "levelName": "むずかしい", "items": ["りす", "てぶくろ", "ろうそく", "すず", "くり"], "answer": ["てぶくろ", "ろうそく", "くり", "りす", "すず"]}, {"level": 3, "levelName": "むずかしい", "items": ["つくえ", "くつ", "てぶくろ", "ろうそく", "えんぴつ"], "answer": ["てぶくろ", "ろうそく", "くつ", "つくえ", "えんぴつ"]}, {"level": 3, "levelName": "むずかしい", "items": ["きつね", "つくえ", "こたつ", "えんぴつ", "ねこ"], "answer": ["きつね", "ねこ", "こたつ", "つくえ", "えんぴつ"]}, {"level": 3, "levelName": "むずかしい", "items": ["きつね", "ねこ", "ふろしき", "つくえ", "こたつ"], "answer": ["ふろしき", "きつね", "ねこ", "こたつ", "つくえ"]}, {"level": 3, "levelName": "むずかしい", "items": ["のこぎり", "すず", "ふろしき", "きもの", "りす"], "answer": ["ふろしき", "きもの", "のこぎり", "りす", "すず"]}, {"level": 3, "levelName": "むずかしい", "items": ["りす", "すず", "のこぎり", "きもの", "ほうき"], "answer": ["ほうき", "きもの", "のこぎり", "りす", "すず"]}, {"level": 3, "levelName": "むずかしい", "items": ["ごりら", "きもの", "ほうき", "りんご", "のこぎり"], "answer": ["ほうき", "きもの", "のこぎり", "りんご", "ごりら"]}, {"level": 3, "levelName": "むずかしい", "items": ["らくだ", "ろうそく", "だるま", "まくら", "くるま"], "answer": ["ろうそく", "くるま", "まくら", "らくだ", "だるま"]}, {"level": 3, "levelName": "むずかしい", "items": ["まくら", "だんご", "うま", "ぞう", "らくだ"], "answer": ["ぞう", "うま", "まくら", "らくだ", "だんご"]}, {"level": 3, "levelName": "むずかしい", "items": ["とけい", "なす", "さかな", "かさ", "いか"], "answer": ["とけい", "いか", "かさ", "さかな", "なす"]}, {"level": 3, "levelName": "むずかしい", "items": ["かめ", "ねずみ", "めがね", "とけい", "いか"], "answer": ["とけい", "いか", "かめ", "めがね", "ねずみ"]}, {"level": 3, "levelName": "むずかしい", "items": ["まめ", "しまうま", "ねずみ", "ほし", "めがね"], "answer": ["ほし", "しまうま", "まめ", "めがね", "ねずみ"]}, {"level": 3, "levelName": "むずかしい", "items": ["はな", "しか", "かさ", "なし", "さくら"], "answer": ["はな", "なし", "しか", "かさ", "さくら"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["くつ", "こたつ", "つくえ", "えんぴつ", "たこ"], "answer": ["たこ", "こたつ", "つくえ", "えんぴつ"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["えんぴつ", "ひよこ", "さくら", "こたつ", "つくえ"], "answer": ["ひよこ", "こたつ", "つくえ", "えんぴつ"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["かぎ", "すいか", "さかな", "なす", "ひよこ"], "answer": ["さかな", "なす", "すいか", "かぎ"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["いちご", "なし", "かぎ", "しか", "はな"], "answer": ["はな", "なし", "しか", "かぎ"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["ごりら", "ひよこ", "いちご", "らくだ", "だんご"], "answer": ["いちご", "ごりら", "らくだ", "だんご"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["だんご", "りんご", "ろうそく", "てぶくろ", "くり"], "answer": ["てぶくろ", "ろうそく", "くり", "りんご"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["きもの", "ふろしき", "りんご", "のこぎり", "いちご"], "answer": ["ふろしき", "きもの", "のこぎり", "りんご"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["てぶくろ", "くるま", "まど", "ろうそく", "たいこ"], "answer": ["てぶくろ", "ろうそく", "くるま", "まど"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["くつ", "めがね", "まめ", "こま", "たいこ"], "answer": ["たいこ", "こま", "まめ", "めがね"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["まり", "ぞう", "かぎ", "うし", "しまうま"], "answer": ["ぞう", "うし", "しまうま", "まり"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["すいか", "いす", "うちわ", "かえる", "とけい"], "answer": ["とけい", "いす", "すいか", "かえる"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["こいのぼり", "りす", "せんぷうき", "すず", "たいこ"], "answer": ["たいこ", "こいのぼり", "りす", "すず"]}];
+const LEVELS=[[1,"かんたん"],[2,"ふつう"],[3,"むずかしい"],[4,"もっとむずかしい"]];
+let lv=1,idx=0,seq=[],showKana=false,voice=false,useTime=false,timerId=null,left=0,done=false;
+const $=id=>document.getElementById(id);
+const first=w=>w[0], last=w=>w[w.length-1];
+function plist(){return PUZZLES.filter(p=>p.level===lv)}
+function cur(){return plist()[idx]}
+function sizing(){
+  const W=document.documentElement.clientWidth,H=innerHeight,p=cur(),n=p.answer.length,m=p.items.length,rs=document.documentElement.style;
+  const set=(fs,w,ws)=>{rs.setProperty("--fs",fs+"px");rs.setProperty("--w",w+"px");rs.setProperty("--ws",ws+"px")};
+  if(W<1100){set(18,done?110:100,done?150:130);return}
+  const fs=Math.max(15,W/112),gap=fs*.5,r=(showKana||done)?1.28:1;
+  set(fs,40,40);                                    // 絵を小さくして、絵以外の高さをはかる
+  const fixed=$("main").offsetHeight-$("slots").offsetHeight-$("pool").offsetHeight;
+  const availH=H-fixed-4, rowW=W-fs*1.2-4;
+  const maxSlot=(rowW-(2*n-2)*gap)/(n+(n-1)*.2);      // 答えの列の横幅の上限（矢印ぶんをふくむ）
+  const maxPool=(rowW-(m-1)*gap)/m;
+  let ws,w;
+  if(done){ws=Math.min(maxSlot,availH/r);w=ws}
+  else{const rho=1.25;ws=Math.min(rho*availH/(r*(rho+1)),maxSlot);w=Math.min(availH/r-ws,maxPool,ws)}
+  set(fs,Math.max(w,40),Math.max(ws,40));
+}
+function say(w){if(!voice||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.lang="ja-JP";u.rate=.85;speechSynthesis.speak(u)}
+function cardEl(w,cls){
+  const d=document.createElement("div");d.className="card "+(cls||"");d.dataset.word=w;
+  const img=new Image();img.alt=w;img.src="images/"+w+".png";
+  const t=document.createElement("div");t.className="t";t.textContent=w;
+  img.onload=()=>{d.prepend(img);t.style.display=(showKana||done)?"":"none"};
+  img.onerror=()=>{t.className="big";t.style.display=""};
+  d.append(t);return d;
+}
+function render(){
+  document.body.classList.toggle("done",done);document.body.classList.toggle("kana",showKana);
+  $("lv").innerHTML="";
+  LEVELS.forEach(([n,name])=>{const b=document.createElement("button");b.textContent=name;if(n===lv)b.className="on";b.onclick=()=>{lv=n;idx=0;start()};$("lv").append(b)});
+  const p=cur();
+  $("info").textContent=`もんだい ${idx+1} / ${plist().length}`+(p.items.length>p.answer.length?"（使わない絵が1まい）":"");
+  const sl=$("slots");sl.innerHTML="";
+  for(let i=0;i<p.answer.length;i++){
+    const s=document.createElement("div");s.className="slot";
+    const no=document.createElement("span");no.className="no";no.textContent=i+1;s.append(no);
+    if(seq[i]){const c=cardEl(seq[i]);c.onclick=()=>{if(done)return;seq.splice(i,1);clearMsg();render()};s.append(c)}
+    sl.append(s);
+    if(i<p.answer.length-1){const a=document.createElement("span");a.className="arrow";a.textContent="→";sl.append(a)}
+  }
+  const pool=$("pool");pool.innerHTML="";
+  p.items.forEach(w=>{
+    const c=cardEl(w,seq.includes(w)?"hide":"");
+    c.onclick=()=>{if(done||seq.includes(w)||seq.length>=p.answer.length)return;seq.push(w);say(w);clearMsg();render()};
+    pool.append(c)});
+  sizing();
+}
+function clearMsg(){$("msg").textContent="";$("msg").className="msg"}
+function start(){seq=[];done=false;clearMsg();$("bNext").style.display="none";stopTimer();if(useTime){left=90;tick();timerId=setInterval(tick,1000)}else $("timer").textContent="";render()}
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null}}
+function tick(){if(done)return;$("timer").textContent="のこり "+left+" びょう";if(left<=0){stopTimer();$("timer").textContent="じかんです。ゆっくりで大丈夫です。";return}left--}
+function check(){
+  const p=cur(),n=p.answer.length;
+  if(seq.length<n){setMsg("no",`まだ あと ${n-seq.length} まい、ならべてください。`);return}
+  for(let i=0;i<n-1;i++){
+    if(last(seq[i])!==first(seq[i+1])){
+      setMsg("no",`おしい！「${seq[i]}」のつぎは「${last(seq[i])}」ではじまる絵です。もういちど、ならべてみましょう。`);
+      document.querySelectorAll(".slot .card").forEach((c,k)=>{if(k===i||k===i+1)c.classList.add("ng")});return}
+  }
+  done=true;stopTimer();render();setMsg("ok","せいかい！ すばらしいです！　"+seq.join(" → "));
+  $("bNext").style.display="";$("bNext").textContent=(idx+1<plist().length)?"つぎのもんだい":"さいしょから";
+  sizing();
+}
+function setMsg(k,t){$("msg").className="msg "+k;$("msg").textContent=t}
+$("bOk").onclick=check;
+$("bUndo").onclick=()=>{if(done)return;seq.pop();clearMsg();render()};
+$("bReset").onclick=()=>{if(done)return;seq=[];clearMsg();render()};
+$("bHint").onclick=()=>{
+  const p=cur();const w=p.answer[Math.min(seq.length,p.answer.length-1)];
+  render();document.querySelectorAll("#pool .card").forEach(c=>{if(c.dataset.word===w)c.classList.add("hint")});
+  setMsg("no",seq.length? `つぎは「${last(seq[seq.length-1])}」ではじまる絵です。`:"1ばんは、ひかっている絵です。")};
+$("bNext").onclick=()=>{idx=(idx+1<plist().length)?idx+1:0;start()};
+$("bSet").onclick=()=>$("opts").classList.toggle("hidden");
+$("bFull").onclick=()=>{
+  const d=document;
+  if(d.fullscreenElement){d.exitFullscreen&&d.exitFullscreen().catch(()=>{})}
+  else if(d.documentElement.requestFullscreen){d.documentElement.requestFullscreen().catch(()=>{})}
+  $("opts").classList.add("hidden")};
+document.addEventListener("fullscreenchange",()=>{$("bFull").textContent=document.fullscreenElement?"全画面をやめる":"全画面";sizing()});
+$("bAns").onclick=()=>{
+  const p=cur();seq=p.answer.slice();done=true;stopTimer();render();
+  setMsg("ok","こたえ　"+seq.join(" → "));
+  $("bNext").style.display="";$("bNext").textContent=(idx+1<plist().length)?"つぎのもんだい":"さいしょから";
+  $("opts").classList.add("hidden");sizing()};
+$("bPrev").onclick=()=>{idx=(idx-1+plist().length)%plist().length;$("opts").classList.add("hidden");start()};
+$("bSkip").onclick=()=>{idx=(idx+1)%plist().length;$("opts").classList.add("hidden");start()};
+$("oKana").onclick=e=>{showKana=!showKana;e.target.className=showKana?"on":"";e.target.textContent="ひらがな："+(showKana?"あり":"なし");render()};
+$("oVoice").onclick=e=>{voice=!voice;e.target.className=voice?"on":"";e.target.textContent="読みあげ："+(voice?"あり":"なし")};
+$("oTime").onclick=e=>{useTime=!useTime;e.target.className=useTime?"on":"";e.target.textContent="時間："+(useTime?"90びょう":"なし");start()};
+addEventListener("resize",()=>sizing());
+start();
+</script></body></html>
