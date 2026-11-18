@@ -60,6 +60,7 @@ body.done .msg{font-size:calc(var(--fs)*2.2)}
  <button id="bSkip">次の問題 ▶</button>
  <button id="oKana">ひらがな：なし</button>
  <button id="oVoice">読みあげ：なし</button>
+ <button id="oPraise" class="on">ほめ声：あり</button>
  <button id="oTime">時間：なし</button>
 </div>
 </div>
@@ -68,9 +69,830 @@ body.done .msg{font-size:calc(var(--fs)*2.2)}
 <div class="bottom"><div class="msg" id="msg" aria-live="polite"></div><p class="foot">この遊びの絵は、AIで作成しました。</p></div>
 </main>
 <script>
-const PUZZLES=[{"level": 1, "levelName": "かんたん", "items": ["まくら", "らくだ", "こま"], "answer": ["こま", "まくら", "らくだ"]}, {"level": 1, "levelName": "かんたん", "items": ["まど", "ねこ", "こま"], "answer": ["ねこ", "こま", "まど"]}, {"level": 1, "levelName": "かんたん", "items": ["だるま", "ごりら", "らくだ"], "answer": ["ごりら", "らくだ", "だるま"]}, {"level": 1, "levelName": "かんたん", "items": ["すいか", "いす", "かご"], "answer": ["いす", "すいか", "かご"]}, {"level": 1, "levelName": "かんたん", "items": ["かさ", "うし", "しか"], "answer": ["うし", "しか", "かさ"]}, {"level": 1, "levelName": "かんたん", "items": ["かえる", "ほし", "しか"], "answer": ["ほし", "しか", "かえる"]}, {"level": 1, "levelName": "かんたん", "items": ["かさ", "なす", "さかな"], "answer": ["かさ", "さかな", "なす"]}, {"level": 1, "levelName": "かんたん", "items": ["まめ", "しまうま", "なし"], "answer": ["なし", "しまうま", "まめ"]}, {"level": 1, "levelName": "かんたん", "items": ["ねずみ", "めがね", "まめ"], "answer": ["まめ", "めがね", "ねずみ"]}, {"level": 1, "levelName": "かんたん", "items": ["とけい", "かめ", "いか"], "answer": ["とけい", "いか", "かめ"]}, {"level": 2, "levelName": "ふつう", "items": ["しまうま", "はな", "まくら", "なし"], "answer": ["はな", "なし", "しまうま", "まくら"]}, {"level": 2, "levelName": "ふつう", "items": ["はな", "かえる", "なす", "すいか"], "answer": ["はな", "なす", "すいか", "かえる"]}, {"level": 2, "levelName": "ふつう", "items": ["かめ", "すいか", "いす", "とけい"], "answer": ["とけい", "いす", "すいか", "かめ"]}, {"level": 2, "levelName": "ふつう", "items": ["かめ", "めがね", "ねずみ", "いか"], "answer": ["いか", "かめ", "めがね", "ねずみ"]}, {"level": 2, "levelName": "ふつう", "items": ["ねこ", "めがね", "くるま", "まめ"], "answer": ["くるま", "まめ", "めがね", "ねこ"]}, {"level": 2, "levelName": "ふつう", "items": ["きつね", "こま", "ねこ", "まど"], "answer": ["きつね", "ねこ", "こま", "まど"]}, {"level": 2, "levelName": "ふつう", "items": ["うし", "ぞう", "しまうま", "まど"], "answer": ["ぞう", "うし", "しまうま", "まど"]}, {"level": 2, "levelName": "ふつう", "items": ["こいのぼり", "りんご", "きつね", "ねこ"], "answer": ["きつね", "ねこ", "こいのぼり", "りんご"]}, {"level": 2, "levelName": "ふつう", "items": ["こいのぼり", "りんご", "ごりら", "たこ"], "answer": ["たこ", "こいのぼり", "りんご", "ごりら"]}, {"level": 2, "levelName": "ふつう", "items": ["うま", "ぞう", "りんご", "まり"], "answer": ["ぞう", "うま", "まり", "りんご"]}, {"level": 2, "levelName": "ふつう", "items": ["ぞう", "りす", "うま", "まり"], "answer": ["ぞう", "うま", "まり", "りす"]}, {"level": 2, "levelName": "ふつう", "items": ["ろうそく", "まり", "りす", "くるま"], "answer": ["ろうそく", "くるま", "まり", "りす"]}, {"level": 2, "levelName": "ふつう", "items": ["かご", "らくだ", "ごりら", "だるま"], "answer": ["かご", "ごりら", "らくだ", "だるま"]}, {"level": 2, "levelName": "ふつう", "items": ["しか", "ほし", "さかな", "かさ"], "answer": ["ほし", "しか", "かさ", "さかな"]}, {"level": 3, "levelName": "むずかしい", "items": ["かご", "たこ", "すいか", "こいのぼり", "りす"], "answer": ["たこ", "こいのぼり", "りす", "すいか", "かご"]}, {"level": 3, "levelName": "むずかしい", "items": ["りす", "てぶくろ", "ろうそく", "すず", "くり"], "answer": ["てぶくろ", "ろうそく", "くり", "りす", "すず"]}, {"level": 3, "levelName": "むずかしい", "items": ["つくえ", "くつ", "てぶくろ", "ろうそく", "えんぴつ"], "answer": ["てぶくろ", "ろうそく", "くつ", "つくえ", "えんぴつ"]}, {"level": 3, "levelName": "むずかしい", "items": ["きつね", "つくえ", "こたつ", "えんぴつ", "ねこ"], "answer": ["きつね", "ねこ", "こたつ", "つくえ", "えんぴつ"]}, {"level": 3, "levelName": "むずかしい", "items": ["きつね", "ねこ", "ふろしき", "つくえ", "こたつ"], "answer": ["ふろしき", "きつね", "ねこ", "こたつ", "つくえ"]}, {"level": 3, "levelName": "むずかしい", "items": ["のこぎり", "すず", "ふろしき", "きもの", "りす"], "answer": ["ふろしき", "きもの", "のこぎり", "りす", "すず"]}, {"level": 3, "levelName": "むずかしい", "items": ["りす", "すず", "のこぎり", "きもの", "ほうき"], "answer": ["ほうき", "きもの", "のこぎり", "りす", "すず"]}, {"level": 3, "levelName": "むずかしい", "items": ["ごりら", "きもの", "ほうき", "りんご", "のこぎり"], "answer": ["ほうき", "きもの", "のこぎり", "りんご", "ごりら"]}, {"level": 3, "levelName": "むずかしい", "items": ["らくだ", "ろうそく", "だるま", "まくら", "くるま"], "answer": ["ろうそく", "くるま", "まくら", "らくだ", "だるま"]}, {"level": 3, "levelName": "むずかしい", "items": ["まくら", "だんご", "うま", "ぞう", "らくだ"], "answer": ["ぞう", "うま", "まくら", "らくだ", "だんご"]}, {"level": 3, "levelName": "むずかしい", "items": ["とけい", "なす", "さかな", "かさ", "いか"], "answer": ["とけい", "いか", "かさ", "さかな", "なす"]}, {"level": 3, "levelName": "むずかしい", "items": ["かめ", "ねずみ", "めがね", "とけい", "いか"], "answer": ["とけい", "いか", "かめ", "めがね", "ねずみ"]}, {"level": 3, "levelName": "むずかしい", "items": ["まめ", "しまうま", "ねずみ", "ほし", "めがね"], "answer": ["ほし", "しまうま", "まめ", "めがね", "ねずみ"]}, {"level": 3, "levelName": "むずかしい", "items": ["はな", "しか", "かさ", "なし", "さくら"], "answer": ["はな", "なし", "しか", "かさ", "さくら"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["くつ", "こたつ", "つくえ", "えんぴつ", "たこ"], "answer": ["たこ", "こたつ", "つくえ", "えんぴつ"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["えんぴつ", "ひよこ", "さくら", "こたつ", "つくえ"], "answer": ["ひよこ", "こたつ", "つくえ", "えんぴつ"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["かぎ", "すいか", "さかな", "なす", "ひよこ"], "answer": ["さかな", "なす", "すいか", "かぎ"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["いちご", "なし", "かぎ", "しか", "はな"], "answer": ["はな", "なし", "しか", "かぎ"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["ごりら", "ひよこ", "いちご", "らくだ", "だんご"], "answer": ["いちご", "ごりら", "らくだ", "だんご"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["だんご", "りんご", "ろうそく", "てぶくろ", "くり"], "answer": ["てぶくろ", "ろうそく", "くり", "りんご"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["きもの", "ふろしき", "りんご", "のこぎり", "いちご"], "answer": ["ふろしき", "きもの", "のこぎり", "りんご"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["てぶくろ", "くるま", "まど", "ろうそく", "たいこ"], "answer": ["てぶくろ", "ろうそく", "くるま", "まど"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["くつ", "めがね", "まめ", "こま", "たいこ"], "answer": ["たいこ", "こま", "まめ", "めがね"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["まり", "ぞう", "かぎ", "うし", "しまうま"], "answer": ["ぞう", "うし", "しまうま", "まり"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["すいか", "いす", "うちわ", "かえる", "とけい"], "answer": ["とけい", "いす", "すいか", "かえる"]}, {"level": 4, "levelName": "もっとむずかしい", "items": ["こいのぼり", "りす", "せんぷうき", "すず", "たいこ"], "answer": ["たいこ", "こいのぼり", "りす", "すず"]}];
+const PUZZLES=[
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "まくら",
+   "らくだ",
+   "こま"
+  ],
+  "answer": [
+   "こま",
+   "まくら",
+   "らくだ"
+  ]
+ },
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "まど",
+   "ねこ",
+   "こま"
+  ],
+  "answer": [
+   "ねこ",
+   "こま",
+   "まど"
+  ]
+ },
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "だるま",
+   "ごりら",
+   "らくだ"
+  ],
+  "answer": [
+   "ごりら",
+   "らくだ",
+   "だるま"
+  ]
+ },
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "すいか",
+   "いす",
+   "かご"
+  ],
+  "answer": [
+   "いす",
+   "すいか",
+   "かご"
+  ]
+ },
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "かさ",
+   "うし",
+   "しか"
+  ],
+  "answer": [
+   "うし",
+   "しか",
+   "かさ"
+  ]
+ },
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "かえる",
+   "ほし",
+   "しか"
+  ],
+  "answer": [
+   "ほし",
+   "しか",
+   "かえる"
+  ]
+ },
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "かさ",
+   "なす",
+   "さかな"
+  ],
+  "answer": [
+   "かさ",
+   "さかな",
+   "なす"
+  ]
+ },
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "まめ",
+   "しまうま",
+   "なし"
+  ],
+  "answer": [
+   "なし",
+   "しまうま",
+   "まめ"
+  ]
+ },
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "ねずみ",
+   "めがね",
+   "まめ"
+  ],
+  "answer": [
+   "まめ",
+   "めがね",
+   "ねずみ"
+  ]
+ },
+ {
+  "level": 1,
+  "levelName": "かんたん",
+  "items": [
+   "とけい",
+   "かめ",
+   "いか"
+  ],
+  "answer": [
+   "とけい",
+   "いか",
+   "かめ"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "しまうま",
+   "はな",
+   "まくら",
+   "なし"
+  ],
+  "answer": [
+   "はな",
+   "なし",
+   "しまうま",
+   "まくら"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "はな",
+   "かえる",
+   "なす",
+   "すいか"
+  ],
+  "answer": [
+   "はな",
+   "なす",
+   "すいか",
+   "かえる"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "かめ",
+   "すいか",
+   "いす",
+   "とけい"
+  ],
+  "answer": [
+   "とけい",
+   "いす",
+   "すいか",
+   "かめ"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "かめ",
+   "めがね",
+   "ねずみ",
+   "いか"
+  ],
+  "answer": [
+   "いか",
+   "かめ",
+   "めがね",
+   "ねずみ"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "ねこ",
+   "めがね",
+   "くるま",
+   "まめ"
+  ],
+  "answer": [
+   "くるま",
+   "まめ",
+   "めがね",
+   "ねこ"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "きつね",
+   "こま",
+   "ねこ",
+   "まど"
+  ],
+  "answer": [
+   "きつね",
+   "ねこ",
+   "こま",
+   "まど"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "うし",
+   "ぞう",
+   "しまうま",
+   "まど"
+  ],
+  "answer": [
+   "ぞう",
+   "うし",
+   "しまうま",
+   "まど"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "こいのぼり",
+   "りんご",
+   "きつね",
+   "ねこ"
+  ],
+  "answer": [
+   "きつね",
+   "ねこ",
+   "こいのぼり",
+   "りんご"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "こいのぼり",
+   "りんご",
+   "ごりら",
+   "たこ"
+  ],
+  "answer": [
+   "たこ",
+   "こいのぼり",
+   "りんご",
+   "ごりら"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "うま",
+   "ぞう",
+   "りんご",
+   "まり"
+  ],
+  "answer": [
+   "ぞう",
+   "うま",
+   "まり",
+   "りんご"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "ぞう",
+   "りす",
+   "うま",
+   "まり"
+  ],
+  "answer": [
+   "ぞう",
+   "うま",
+   "まり",
+   "りす"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "ろうそく",
+   "まり",
+   "りす",
+   "くるま"
+  ],
+  "answer": [
+   "ろうそく",
+   "くるま",
+   "まり",
+   "りす"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "かご",
+   "らくだ",
+   "ごりら",
+   "だるま"
+  ],
+  "answer": [
+   "かご",
+   "ごりら",
+   "らくだ",
+   "だるま"
+  ]
+ },
+ {
+  "level": 2,
+  "levelName": "ふつう",
+  "items": [
+   "しか",
+   "ほし",
+   "さかな",
+   "かさ"
+  ],
+  "answer": [
+   "ほし",
+   "しか",
+   "かさ",
+   "さかな"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "かご",
+   "たこ",
+   "すいか",
+   "こいのぼり",
+   "りす"
+  ],
+  "answer": [
+   "たこ",
+   "こいのぼり",
+   "りす",
+   "すいか",
+   "かご"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "りす",
+   "てぶくろ",
+   "ろうそく",
+   "すず",
+   "くり"
+  ],
+  "answer": [
+   "てぶくろ",
+   "ろうそく",
+   "くり",
+   "りす",
+   "すず"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "つくえ",
+   "くつ",
+   "てぶくろ",
+   "ろうそく",
+   "えんぴつ"
+  ],
+  "answer": [
+   "てぶくろ",
+   "ろうそく",
+   "くつ",
+   "つくえ",
+   "えんぴつ"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "きつね",
+   "つくえ",
+   "こたつ",
+   "えんぴつ",
+   "ねこ"
+  ],
+  "answer": [
+   "きつね",
+   "ねこ",
+   "こたつ",
+   "つくえ",
+   "えんぴつ"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "きつね",
+   "ねこ",
+   "ふろしき",
+   "つくえ",
+   "こたつ"
+  ],
+  "answer": [
+   "ふろしき",
+   "きつね",
+   "ねこ",
+   "こたつ",
+   "つくえ"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "のこぎり",
+   "すず",
+   "ふろしき",
+   "きもの",
+   "りす"
+  ],
+  "answer": [
+   "ふろしき",
+   "きもの",
+   "のこぎり",
+   "りす",
+   "すず"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "りす",
+   "すず",
+   "のこぎり",
+   "きもの",
+   "ほうき"
+  ],
+  "answer": [
+   "ほうき",
+   "きもの",
+   "のこぎり",
+   "りす",
+   "すず"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "ごりら",
+   "きもの",
+   "ほうき",
+   "りんご",
+   "のこぎり"
+  ],
+  "answer": [
+   "ほうき",
+   "きもの",
+   "のこぎり",
+   "りんご",
+   "ごりら"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "らくだ",
+   "ろうそく",
+   "だるま",
+   "まくら",
+   "くるま"
+  ],
+  "answer": [
+   "ろうそく",
+   "くるま",
+   "まくら",
+   "らくだ",
+   "だるま"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "まくら",
+   "だんご",
+   "うま",
+   "ぞう",
+   "らくだ"
+  ],
+  "answer": [
+   "ぞう",
+   "うま",
+   "まくら",
+   "らくだ",
+   "だんご"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "とけい",
+   "なす",
+   "さかな",
+   "かさ",
+   "いか"
+  ],
+  "answer": [
+   "とけい",
+   "いか",
+   "かさ",
+   "さかな",
+   "なす"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "かめ",
+   "ねずみ",
+   "めがね",
+   "とけい",
+   "いか"
+  ],
+  "answer": [
+   "とけい",
+   "いか",
+   "かめ",
+   "めがね",
+   "ねずみ"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "まめ",
+   "しまうま",
+   "ねずみ",
+   "ほし",
+   "めがね"
+  ],
+  "answer": [
+   "ほし",
+   "しまうま",
+   "まめ",
+   "めがね",
+   "ねずみ"
+  ]
+ },
+ {
+  "level": 3,
+  "levelName": "むずかしい",
+  "items": [
+   "はな",
+   "しか",
+   "かさ",
+   "なし",
+   "さくら"
+  ],
+  "answer": [
+   "はな",
+   "なし",
+   "しか",
+   "かさ",
+   "さくら"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "くつ",
+   "こたつ",
+   "つくえ",
+   "えんぴつ",
+   "たこ"
+  ],
+  "answer": [
+   "たこ",
+   "こたつ",
+   "つくえ",
+   "えんぴつ"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "えんぴつ",
+   "ひよこ",
+   "さくら",
+   "こたつ",
+   "つくえ"
+  ],
+  "answer": [
+   "ひよこ",
+   "こたつ",
+   "つくえ",
+   "えんぴつ"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "かぎ",
+   "すいか",
+   "さかな",
+   "なす",
+   "ひよこ"
+  ],
+  "answer": [
+   "さかな",
+   "なす",
+   "すいか",
+   "かぎ"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "いちご",
+   "なし",
+   "かぎ",
+   "しか",
+   "はな"
+  ],
+  "answer": [
+   "はな",
+   "なし",
+   "しか",
+   "かぎ"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "ごりら",
+   "ひよこ",
+   "いちご",
+   "らくだ",
+   "だんご"
+  ],
+  "answer": [
+   "いちご",
+   "ごりら",
+   "らくだ",
+   "だんご"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "だんご",
+   "りんご",
+   "ろうそく",
+   "てぶくろ",
+   "くり"
+  ],
+  "answer": [
+   "てぶくろ",
+   "ろうそく",
+   "くり",
+   "りんご"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "きもの",
+   "ふろしき",
+   "りんご",
+   "のこぎり",
+   "いちご"
+  ],
+  "answer": [
+   "ふろしき",
+   "きもの",
+   "のこぎり",
+   "りんご"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "てぶくろ",
+   "くるま",
+   "まど",
+   "ろうそく",
+   "たいこ"
+  ],
+  "answer": [
+   "てぶくろ",
+   "ろうそく",
+   "くるま",
+   "まど"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "くつ",
+   "めがね",
+   "まめ",
+   "こま",
+   "たいこ"
+  ],
+  "answer": [
+   "たいこ",
+   "こま",
+   "まめ",
+   "めがね"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "まり",
+   "ぞう",
+   "かぎ",
+   "うし",
+   "しまうま"
+  ],
+  "answer": [
+   "ぞう",
+   "うし",
+   "しまうま",
+   "まり"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "すいか",
+   "いす",
+   "うちわ",
+   "かえる",
+   "とけい"
+  ],
+  "answer": [
+   "とけい",
+   "いす",
+   "すいか",
+   "かえる"
+  ]
+ },
+ {
+  "level": 4,
+  "levelName": "もっとむずかしい",
+  "items": [
+   "こいのぼり",
+   "りす",
+   "せんぷうき",
+   "すず",
+   "たいこ"
+  ],
+  "answer": [
+   "たいこ",
+   "こいのぼり",
+   "りす",
+   "すず"
+  ]
+ }
+];
 const LEVELS=[[1,"かんたん"],[2,"ふつう"],[3,"むずかしい"],[4,"もっとむずかしい"]];
-let lv=1,idx=0,seq=[],showKana=false,voice=false,useTime=false,timerId=null,left=0,done=false;
+let praise=true,lv=1,idx=0,seq=[],showKana=false,voice=false,useTime=false,timerId=null,left=0,done=false;
 const $=id=>document.getElementById(id);
 const first=w=>w[0], last=w=>w[w.length-1];
 function plist(){return PUZZLES.filter(p=>p.level===lv)}
@@ -90,6 +912,7 @@ function sizing(){
   else{const rho=1.25;ws=Math.min(rho*availH/(r*(rho+1)),maxSlot);w=Math.min(availH/r-ws,maxPool,ws)}
   set(fs,Math.max(w,40),Math.max(ws,40));
 }
+function cheer(t){if(!praise||!window.speechSynthesis)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="ja-JP";u.rate=.9;u.pitch=1.15;u.volume=1;speechSynthesis.speak(u)}catch(e){}}
 function say(w){if(!voice||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.lang="ja-JP";u.rate=.85;speechSynthesis.speak(u)}
 function cardEl(w,cls){
   const d=document.createElement("div");d.className="card "+(cls||"");d.dataset.word=w;
@@ -129,10 +952,10 @@ function check(){
   if(seq.length<n){setMsg("no",`まだ あと ${n-seq.length} まい、ならべてください。`);return}
   for(let i=0;i<n-1;i++){
     if(last(seq[i])!==first(seq[i+1])){
-      setMsg("no",`おしい！「${seq[i]}」のつぎは「${last(seq[i])}」ではじまる絵です。もういちど、ならべてみましょう。`);
+      setMsg("no",`おしい！「${seq[i]}」のつぎは「${last(seq[i])}」ではじまる絵です。もういちど、ならべてみましょう。`);cheer("おしい！　もう一回がんばって！");
       document.querySelectorAll(".slot .card").forEach((c,k)=>{if(k===i||k===i+1)c.classList.add("ng")});return}
   }
-  done=true;stopTimer();render();setMsg("ok","せいかい！ すばらしいです！　"+seq.join(" → "));
+  done=true;stopTimer();render();setMsg("ok","せいかい！ すばらしいです！　"+seq.join(" → "));cheer("せいかい！　すばらしいです！");
   $("bNext").style.display="";$("bNext").textContent=(idx+1<plist().length)?"つぎのもんだい":"さいしょから";
   sizing();
 }
@@ -160,6 +983,7 @@ $("bAns").onclick=()=>{
 $("bPrev").onclick=()=>{idx=(idx-1+plist().length)%plist().length;$("opts").classList.add("hidden");start()};
 $("bSkip").onclick=()=>{idx=(idx+1)%plist().length;$("opts").classList.add("hidden");start()};
 $("oKana").onclick=e=>{showKana=!showKana;e.target.className=showKana?"on":"";e.target.textContent="ひらがな："+(showKana?"あり":"なし");render()};
+$("oPraise").onclick=e=>{praise=!praise;e.target.className=praise?"on":"";e.target.textContent="ほめ声："+(praise?"あり":"なし")};
 $("oVoice").onclick=e=>{voice=!voice;e.target.className=voice?"on":"";e.target.textContent="読みあげ："+(voice?"あり":"なし")};
 $("oTime").onclick=e=>{useTime=!useTime;e.target.className=useTime?"on":"";e.target.textContent="時間："+(useTime?"90びょう":"なし");start()};
 addEventListener("resize",()=>sizing());
