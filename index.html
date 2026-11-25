@@ -39,7 +39,11 @@ body.done .pool,body.done .btnrow{display:none}
 body.done .msg{font-size:calc(var(--fs)*2.2)}
 @media (max-width:1099px){.slots,.pool{flex-wrap:wrap}}
 .foot{margin:0;color:#777;font-size:calc(var(--fs)*.75);white-space:nowrap}
-</style></head><body><main id="main">
+#startOverlay{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(24px,5vh,64px);padding:4vh 4vw;text-align:center}
+#startOverlay h2{font-size:clamp(44px,min(13vw,18vh),168px);line-height:1.15;letter-spacing:.04em;margin:0;color:var(--ink)}
+#bStart{font-size:clamp(22px,min(4.5vw,5.2vh),48px);min-height:clamp(56px,9vh,96px);padding:.4em 1.6em;border-radius:.5em;background:var(--accent);color:#fff}
+#bStart:disabled{opacity:.65;cursor:default}
+</style></head><body><div id="startOverlay"><h2>絵でしりとり</h2><button id="bStart" type="button">ゲームをはじめる</button></div><main id="main">
 <div class="top" id="top">
  <h1>絵でしりとり</h1>
  <div class="row lv" id="lv"></div>
@@ -998,4 +1002,45 @@ $("oVoice").onclick=e=>{voice=!voice;e.target.className=voice?"on":"";e.target.t
 $("oTime").onclick=e=>{useTime=!useTime;e.target.className=useTime?"on":"";e.target.textContent="時間："+(useTime?"90びょう":"なし");start()};
 addEventListener("resize",()=>sizing());
 start();
+let introStarted=false;
+$("bStart").onclick=()=>{
+  if(introStarted)return;
+  introStarted=true;
+  const btn=$("bStart");
+  btn.disabled=true;
+  btn.textContent="もうすぐ はじまります…";
+  const finishIntro=()=>{$("startOverlay").classList.add("hidden")};
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(AC){
+    const ctx=new AC();
+    const resumePromise=ctx.state==="suspended"?ctx.resume():Promise.resolve();
+    const bufPromise=fetch("audio/intro.wav").then(r=>{
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      return r.arrayBuffer();
+    }).then(ab=>ctx.decodeAudioData(ab));
+    setTimeout(()=>{
+      Promise.all([resumePromise,bufPromise]).then(([,buf])=>{
+        btn.textContent="せつめいを きいています…";
+        const src=ctx.createBufferSource();
+        src.buffer=buf;
+        src.connect(ctx.destination);
+        src.onended=()=>{try{ctx.close()}catch(e){}finishIntro()};
+        src.start(0);
+      }).catch(err=>{
+        console.warn("intro.wav の再生に失敗しました:",err);
+        try{ctx.close()}catch(e){}
+        finishIntro();
+      });
+    },3000);
+  }else{
+    const a=new Audio("audio/intro.wav");
+    a.onended=finishIntro;
+    a.onerror=finishIntro;
+    setTimeout(()=>{
+      btn.textContent="せつめいを きいています…";
+      const pr=a.play();
+      if(pr&&pr.catch)pr.catch(finishIntro);
+    },3000);
+  }
+};
 </script></body></html>
