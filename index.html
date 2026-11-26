@@ -45,7 +45,16 @@ body.done .msg{font-size:calc(var(--fs)*2.2)}
 #bStart:disabled{opacity:.65;cursor:default}
 #bFullStart{position:fixed;right:2vw;bottom:2vh;font-size:max(16px,2.6vh);min-height:0;padding:.8vh 1.6vw;opacity:.85}
 @media (min-width:900px) and (min-aspect-ratio:5/4){#bFullStart{top:2vh;bottom:auto}}
-</style></head><body><div id="startOverlay"><h2>絵でしりとり</h2><button id="bStart" type="button">ゲームをはじめる</button><button id="bFullStart" type="button">⛶ 全画面</button></div><main id="main">
+#startOverlay .smain{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(24px,5vh,64px)}
+#startOverlay .chara{display:none}
+@media (min-aspect-ratio:1/1){
+#startOverlay{flex-direction:row;gap:3vw}
+#startOverlay .chara{display:block;flex:none;width:min(36vw,66vh)}
+#startOverlay .chara img{display:block;width:100%;height:auto;border-radius:2vh;box-shadow:0 .8vh 2vh rgba(60,40,20,.25)}
+#startOverlay .smain{width:calc(100vw - 36vw - 12vw)}
+#startOverlay h2{font-size:clamp(40px,min(8vw,12vh),120px)}
+}
+</style></head><body><div id="startOverlay"><div class="chara"><img id="charaImg" src="chara_close.jpg" alt="司会者"></div><div class="smain"><h2>絵でしりとり</h2><button id="bStart" type="button">ゲームをはじめる</button></div><button id="bFullStart" type="button">⛶ 全画面</button></div><main id="main">
 <div class="top" id="top">
  <h1>絵でしりとり</h1>
  <div class="row lv" id="lv"></div>
@@ -1023,6 +1032,30 @@ $("oVoice").onclick=e=>{voice=!voice;e.target.className=voice?"on":"";e.target.t
 $("oTime").onclick=e=>{useTime=!useTime;e.target.className=useTime?"on":"";e.target.textContent="時間："+(useTime?"90びょう":"なし");start()};
 addEventListener("resize",()=>sizing());
 start();
+// ---- 口パク（せつめいの声の大きさを測って、4枚の画像を切りかえる） ----
+const CH={close:"chara_close.jpg",half:"chara_half.jpg",open:"chara_open.jpg",blink:"chara_blink.jpg"};
+Object.values(CH).forEach(src=>{const i=new Image();i.src=src});
+const LIP_OPEN=140,LIP_HALF=60;   // しきい値（声の大きさ。あとで調整できる）
+let lipAn=null,lipPlaying=false,lipTimer=null,blinkTimer=null,blinking=false;
+function setChara(k){const im=$("charaImg");if(im)im.src=CH[k]}
+function lipStart(){
+  clearInterval(lipTimer);clearTimeout(blinkTimer);blinking=false;
+  const data=lipAn?new Uint8Array(lipAn.frequencyBinCount):null;
+  lipTimer=setInterval(()=>{
+    if(blinking)return;
+    if(!lipPlaying){setChara("close");return}
+    if(!lipAn){const r=Math.random();setChara(r>.66?"open":(r>.33?"half":"close"));return}   // 解析できないときの簡易口パク
+    lipAn.getByteFrequencyData(data);
+    let sum=0;for(let i=0;i<30;i++)sum+=data[i];
+    const avg=sum/30;window.__lipAvg=avg;
+    setChara(avg>LIP_OPEN?"open":(avg>LIP_HALF?"half":"close"));
+  },90);
+  const sched=()=>{blinkTimer=setTimeout(()=>{
+    if(lipPlaying){blinking=true;setChara("blink");setTimeout(()=>{blinking=false;setChara("close")},150)}
+    sched()},3000+Math.random()*2000)};
+  sched();
+}
+function lipStop(){clearInterval(lipTimer);clearTimeout(blinkTimer);lipTimer=null;blinkTimer=null;blinking=false;lipPlaying=false;setChara("close")}
 let introStarted=false;
 $("bStart").onclick=()=>{
   if(introStarted)return;
@@ -1030,7 +1063,7 @@ $("bStart").onclick=()=>{
   const btn=$("bStart");
   btn.disabled=true;
   btn.textContent="もうすぐ はじまります…";
-  const finishIntro=()=>{$("startOverlay").classList.add("hidden")};
+  const finishIntro=()=>{lipStop();$("startOverlay").classList.add("hidden")};
   const AC=window.AudioContext||window.webkitAudioContext;
   if(AC){
     const ctx=new AC();
@@ -1044,8 +1077,10 @@ $("bStart").onclick=()=>{
         btn.textContent="せつめいを きいています…";
         const src=ctx.createBufferSource();
         src.buffer=buf;
-        src.connect(ctx.destination);
-        src.onended=()=>{try{ctx.close()}catch(e){}finishIntro()};
+        const an=ctx.createAnalyser();an.fftSize=256;an.smoothingTimeConstant=0.3;
+        src.connect(an);an.connect(ctx.destination);
+        lipAn=an;lipPlaying=true;lipStart();
+        src.onended=()=>{lipPlaying=false;try{ctx.close()}catch(e){}finishIntro()};
         src.start(0);
       }).catch(err=>{
         console.warn("intro.wav を、音量解析なしで再生します（パソコンの中のファイルを直接開いたときなど）:",err);
@@ -1055,6 +1090,7 @@ $("bStart").onclick=()=>{
           btn.textContent="せつめいを きいています…";
           const a2=new Audio("audio/intro.wav");
           a2.onended=finishIntro;a2.onerror=finishIntro;
+          lipAn=null;lipPlaying=true;lipStart();
           const pr2=a2.play();if(pr2&&pr2.catch)pr2.catch(finishIntro);
         }catch(e2){finishIntro()}
       });
@@ -1065,6 +1101,7 @@ $("bStart").onclick=()=>{
     a.onerror=finishIntro;
     setTimeout(()=>{
       btn.textContent="せつめいを きいています…";
+      lipAn=null;lipPlaying=true;lipStart();
       const pr=a.play();
       if(pr&&pr.catch)pr.catch(finishIntro);
     },3000);
